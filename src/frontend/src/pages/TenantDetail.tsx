@@ -2,14 +2,18 @@ import {
   CheckCircle,
   ChevronLeft,
   Edit,
+  FileText,
   Home,
   Mail,
+  MapPin,
   Phone,
   Plus,
   Trash2,
+  Upload,
   User,
+  X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Bill,
   RentPayment,
@@ -50,6 +54,7 @@ import {
 } from "../components/ui/tabs";
 import { Textarea } from "../components/ui/textarea";
 import { useActor } from "../hooks/useActor";
+import { useBlobStorage } from "../hooks/useBlobStorage";
 import {
   currentMonth,
   currentYear,
@@ -70,6 +75,7 @@ interface Props {
 
 export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
   const { actor } = useActor();
+  const { uploadFile } = useBlobStorage();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
@@ -88,6 +94,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
     leavingDate: "",
     brokerName: "",
     brokerContact: "",
+    permanentAddress: "",
     notes: "",
   });
   const [editSaving, setEditSaving] = useState(false);
@@ -144,6 +151,14 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
   const [depSaving, setDepSaving] = useState(false);
   const [agrSaving, setAgrSaving] = useState(false);
 
+  // Documents
+  const [uploadedDocs, setUploadedDocs] = useState<
+    { name: string; blobId: string }[]
+  >([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   async function reload() {
     if (!actor) return;
     const [t, rp, b, dep, agr] = await Promise.all([
@@ -160,6 +175,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
     setAgreement(agr);
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reload is stable
   useEffect(() => {
     if (!actor) return;
     reload().finally(() => setLoading(false));
@@ -176,6 +192,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
         leavingDate: tenant.leavingDate,
         brokerName: tenant.brokerName,
         brokerContact: tenant.brokerContact,
+        permanentAddress: tenant.permanentAddress || "",
         notes: tenant.notes,
       });
     }
@@ -208,6 +225,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
       editForm.leavingDate,
       editForm.brokerName,
       editForm.brokerContact,
+      editForm.permanentAddress,
       editForm.notes,
     );
     await reload();
@@ -313,6 +331,19 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
     setAgrSaving(false);
   }
 
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadingDoc(true);
+    try {
+      for (const file of Array.from(files)) {
+        const blobId = await uploadFile(file);
+        setUploadedDocs((prev) => [...prev, { name: file.name, blobId }]);
+      }
+    } finally {
+      setUploadingDoc(false);
+    }
+  }
+
   if (loading)
     return (
       <div className="p-4">
@@ -409,6 +440,13 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
                     value={formatDate(tenant.leavingDate)}
                   />
                 )}
+                {tenant.permanentAddress && (
+                  <InfoRow
+                    icon={<MapPin className="h-4 w-4" />}
+                    label="Permanent Address"
+                    value={tenant.permanentAddress}
+                  />
+                )}
                 {tenant.brokerName && (
                   <InfoRow
                     icon={<User className="h-4 w-4" />}
@@ -424,6 +462,92 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
                 )}
               </CardContent>
             </Card>
+
+            {/* Documents section */}
+            {isAdmin && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Documents</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-gray-500">
+                    Upload agreement, ID proof, or other documents.
+                  </p>
+                  <button
+                    type="button"
+                    data-ocid="tenant_detail.dropzone"
+                    className={`border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+                      dragOver
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50"
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        fileInputRef.current?.click();
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(true);
+                    }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      handleFiles(e.dataTransfer.files);
+                    }}
+                  >
+                    <Upload className="h-7 w-7 text-indigo-400" />
+                    <p className="text-sm text-gray-600 font-medium">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      PDF, JPG, PNG up to 10MB
+                    </p>
+                    {uploadingDoc && (
+                      <p className="text-xs text-indigo-500 animate-pulse">
+                        Uploading...
+                      </p>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    data-ocid="tenant_detail.upload_button"
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+                  {uploadedDocs.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadedDocs.map((doc, i) => (
+                        <div
+                          key={doc.blobId || doc.name}
+                          className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2"
+                          data-ocid={`tenant_detail.document.item.${i + 1}`}
+                        >
+                          <FileText className="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-700 flex-1 truncate">
+                            {doc.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setUploadedDocs((prev) =>
+                                prev.filter((_, idx) => idx !== i),
+                              )
+                            }
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* RENT TAB */}
@@ -454,7 +578,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
                 );
                 return (
                   <Card
-                    key={i}
+                    key={`${p.year}-${p.month}`}
                     className={`border-0 shadow-sm ${overdue ? "ring-1 ring-red-300" : ""}`}
                     data-ocid={`tenant_detail.rent.item.${i + 1}`}
                   >
@@ -538,7 +662,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
                 const overdue = isOverdueBill(b.dueDate, b.paidStatus);
                 return (
                   <Card
-                    key={i}
+                    key={String(b.id)}
                     className={`border-0 shadow-sm ${overdue ? "ring-1 ring-red-300" : ""}`}
                     data-ocid={`tenant_detail.bills.item.${i + 1}`}
                   >
@@ -811,6 +935,21 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
                 />
               </div>
             ))}
+            <div>
+              <Label className="text-xs">Permanent Address</Label>
+              <Textarea
+                data-ocid="tenant_detail.edit_permanent_address_input"
+                value={editForm.permanentAddress}
+                onChange={(e) =>
+                  setEditForm((f) => ({
+                    ...f,
+                    permanentAddress: e.target.value,
+                  }))
+                }
+                rows={2}
+                placeholder="Full permanent address"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs">Move In Date</Label>
@@ -914,7 +1053,7 @@ export default function TenantDetail({ tenantId, onBack, isAdmin }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 12 }, (_, i) => (
-                      <SelectItem key={i + 1} value={String(i + 1)}>
+                      <SelectItem key={monthName(i + 1)} value={String(i + 1)}>
                         {monthName(i + 1)}
                       </SelectItem>
                     ))}

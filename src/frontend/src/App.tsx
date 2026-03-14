@@ -1,15 +1,19 @@
 import {
   Bell,
   Building2,
+  CheckCircle2,
   Home,
   LayoutDashboard,
+  Loader2,
   LogOut,
   Receipt,
+  RefreshCw,
   Users,
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Tenant } from "./backend.d";
+import { Button } from "./components/ui/button";
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import AddProperty from "./pages/AddProperty";
@@ -38,6 +42,30 @@ type Page =
   | "property-detail"
   | "add-property";
 
+function parseProfileName(raw: string): {
+  displayName: string;
+  unitNumber: string;
+} {
+  const idx = raw.indexOf("|");
+  if (idx === -1) return { displayName: raw, unitNumber: "" };
+  return {
+    displayName: raw.slice(0, idx).trim(),
+    unitNumber: raw.slice(idx + 1).trim(),
+  };
+}
+
+function matchTenant(
+  tenants: Tenant[],
+  profileName: string,
+): Tenant | undefined {
+  const { displayName, unitNumber } = parseProfileName(profileName);
+  return tenants.find(
+    (t) =>
+      t.name.toLowerCase() === displayName.toLowerCase() ||
+      (unitNumber && t.unitNumber.toLowerCase() === unitNumber.toLowerCase()),
+  );
+}
+
 function App() {
   const { identity, isInitializing, clear } = useInternetIdentity();
   const { actor, isFetching } = useActor();
@@ -46,11 +74,14 @@ function App() {
   >("loading");
   const [isAdmin, setIsAdmin] = useState(false);
   const [tenantRecord, setTenantRecord] = useState<Tenant | null>(null);
+  const [profileName, setProfileName] = useState("");
   const [page, setPage] = useState<Page>("dashboard");
   const [selectedTenantId, setSelectedTenantId] = useState<bigint | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<bigint | null>(
     null,
   );
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshFound, setRefreshFound] = useState(false);
 
   useEffect(() => {
     if (isInitializing || isFetching) return;
@@ -67,25 +98,38 @@ function App() {
           setAppState("register");
           return;
         }
+        setProfileName(profile.name);
         const admin = await actor.isCallerAdmin();
         setIsAdmin(admin);
         if (admin) {
           setAppState("owner-app");
         } else {
           const tenants = await actor.getAllTenants();
-          const matched = tenants.find(
-            (t) => t.name.toLowerCase() === profile.name.toLowerCase(),
-          );
+          const matched = matchTenant(tenants, profile.name);
           if (matched) {
             setTenantRecord(matched);
-            setAppState("tenant-portal");
-          } else {
-            setAppState("tenant-portal");
           }
+          setAppState("tenant-portal");
         }
       })
       .catch(() => setAppState("register"));
   }, [identity, actor, isInitializing, isFetching]);
+
+  async function handleRefreshCheck() {
+    if (!actor) return;
+    setRefreshing(true);
+    try {
+      const tenants = await actor.getAllTenants();
+      const matched = matchTenant(tenants, profileName);
+      if (matched) {
+        setRefreshFound(true);
+        setTenantRecord(matched);
+        setTimeout(() => setRefreshFound(false), 1500);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function handleRegisterComplete(role: "owner" | "tenant") {
     if (role === "owner") setAppState("owner-app");
@@ -117,29 +161,125 @@ function App() {
   if (appState === "login") return <Login />;
   if (appState === "register")
     return <Register onComplete={handleRegisterComplete} />;
+
   if (appState === "tenant-portal") {
     if (!tenantRecord) {
+      const { displayName, unitNumber } = parseProfileName(profileName);
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
-          <Building2
-            className="h-12 w-12 mb-4"
-            style={{ color: "oklch(0.7 0.1 280)" }}
-          />
-          <h2 className="text-xl font-bold text-foreground mb-2">
-            Account Pending
-          </h2>
-          <p className="text-muted-foreground text-center text-sm mb-4">
-            Your account has been registered. Please ask your property owner to
-            link your unit number to your name in the system.
-          </p>
-          <button
-            type="button"
-            onClick={clear}
-            className="text-sm underline"
-            style={{ color: "oklch(0.42 0.22 280)" }}
-          >
-            Sign Out
-          </button>
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-blue-50">
+          <div className="w-full max-w-sm">
+            {/* Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 p-8 text-center space-y-5">
+              {/* Icon */}
+              <div
+                className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ background: "oklch(0.95 0.04 280)" }}
+              >
+                <Building2
+                  className="h-8 w-8"
+                  style={{ color: "oklch(0.42 0.22 280)" }}
+                />
+              </div>
+
+              {/* Title */}
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Registration Complete!
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Waiting for owner to link your account
+                </p>
+              </div>
+
+              {/* Info pills */}
+              <div className="bg-indigo-50 rounded-xl p-4 text-left space-y-3">
+                <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide">
+                  Your Details
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Name</span>
+                  <span className="text-sm font-semibold text-gray-800">
+                    {displayName || "—"}
+                  </span>
+                </div>
+                {unitNumber && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">Unit</span>
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: "oklch(0.42 0.22 280)" }}
+                    >
+                      {unitNumber}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Message */}
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Once your owner adds you as a tenant using the name{" "}
+                <span className="font-semibold text-gray-800">
+                  "{displayName}"
+                </span>
+                {unitNumber && (
+                  <>
+                    {" "}
+                    and unit{" "}
+                    <span
+                      className="font-semibold"
+                      style={{ color: "oklch(0.42 0.22 280)" }}
+                    >
+                      {unitNumber}
+                    </span>
+                  </>
+                )}
+                , you'll get full access here.
+              </p>
+
+              {/* Refresh button */}
+              {refreshFound ? (
+                <div
+                  className="flex items-center justify-center gap-2 py-2"
+                  data-ocid="pending.success_state"
+                >
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <span className="text-sm font-medium text-green-600">
+                    Account linked! Loading your portal…
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  data-ocid="pending.primary_button"
+                  className="w-full text-white"
+                  style={{ background: "oklch(0.42 0.22 280)" }}
+                  onClick={handleRefreshCheck}
+                  disabled={refreshing}
+                >
+                  {refreshing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking…
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh / Check Again
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Sign out */}
+              <button
+                type="button"
+                data-ocid="pending.cancel_button"
+                onClick={clear}
+                className="text-sm text-gray-400 hover:text-gray-600 underline"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
         </div>
       );
     }

@@ -136,9 +136,11 @@ export default function Bills({ isAdmin }: Props) {
 
       {loading ? (
         <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full" />
-          ))}
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
         </div>
       ) : filtered.length === 0 ? (
         <div
@@ -154,7 +156,7 @@ export default function Bills({ isAdmin }: Props) {
             const overdue = isOverdueBill(b.dueDate, b.paidStatus);
             return (
               <Card
-                key={i}
+                key={String(b.id)}
                 className={`border-0 shadow-sm ${overdue ? "ring-1 ring-red-200" : ""}`}
                 data-ocid={`bills.item.${i + 1}`}
               >
@@ -207,6 +209,7 @@ export default function Bills({ isAdmin }: Props) {
                       </div>
                       {!b.paidStatus && isAdmin && (
                         <button
+                          type="button"
                           data-ocid={`bills.mark_paid_button.${i + 1}`}
                           onClick={() => {
                             setMarkTarget(b);

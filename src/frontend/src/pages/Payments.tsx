@@ -141,7 +141,10 @@ export default function Payments({ isAdmin }: Props) {
           </SelectTrigger>
           <SelectContent>
             {Array.from({ length: 12 }, (_, i) => (
-              <SelectItem key={i + 1} value={String(i + 1)}>
+              <SelectItem // biome-ignore lint/suspicious/noArrayIndexKey: stable list
+                key={i + 1}
+                value={String(i + 1)}
+              >
                 {monthName(i + 1)}
               </SelectItem>
             ))}
@@ -173,9 +176,11 @@ export default function Payments({ isAdmin }: Props) {
 
       {loading ? (
         <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
         </div>
       ) : rows.length === 0 ? (
         <div
@@ -195,7 +200,7 @@ export default function Payments({ isAdmin }: Props) {
             );
             return (
               <Card
-                key={i}
+                key={String(t.id)}
                 className={`border-0 shadow-sm ${overdue ? "ring-1 ring-red-200" : ""}`}
                 data-ocid={`payments.item.${i + 1}`}
               >
@@ -236,6 +241,7 @@ export default function Payments({ isAdmin }: Props) {
                       </div>
                       {!p.paidStatus && isAdmin && (
                         <button
+                          type="button"
                           data-ocid={`payments.mark_paid_button.${i + 1}`}
                           onClick={() => {
                             setMarkTarget({ tenant: t, payment: p });

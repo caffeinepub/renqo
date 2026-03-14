@@ -1,11 +1,11 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Nat "mo:core/Nat";
+import Array "mo:core/Array";
 import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import Text "mo:core/Text";
-import Array "mo:core/Array";
 import Principal "mo:core/Principal";
 import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
@@ -14,6 +14,7 @@ import Storage "blob-storage/Storage";
 import Migration "migration";
 
 // Data migration on upgrades
+
 (with migration = Migration.run)
 actor {
   include MixinStorage();
@@ -61,6 +62,7 @@ actor {
     leavingDate : Text;
     brokerName : Text;
     brokerContact : Text;
+    permanentAddress : Text;
     notes : Text;
   };
 
@@ -81,12 +83,12 @@ actor {
     tenantId : Nat;
     month : Nat;
     year : Nat;
+    rentAmount : Nat;
     amountPaid : Nat;
+    dueDay : Nat;
     paidStatus : Bool;
     paymentDate : Text;
     notes : Text;
-    rentAmount : Nat;
-    dueDay : Nat;
   };
 
   type Bill = {
@@ -172,7 +174,7 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
@@ -190,6 +192,7 @@ actor {
     leavingDate : Text,
     brokerName : Text,
     brokerContact : Text,
+    permanentAddress : Text,
     notes : Text,
   ) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
@@ -207,6 +210,7 @@ actor {
       leavingDate;
       brokerName;
       brokerContact;
+      permanentAddress;
       notes;
     };
 
@@ -225,10 +229,11 @@ actor {
     leavingDate : Text,
     brokerName : Text,
     brokerContact : Text,
+    permanentAddress : Text,
     notes : Text,
   ) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only admin or user can update tenant");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update tenant");
     };
 
     let tenant : Tenant = {
@@ -241,6 +246,7 @@ actor {
       leavingDate;
       brokerName;
       brokerContact;
+      permanentAddress;
       notes;
     };
 
@@ -337,8 +343,8 @@ actor {
     tenantId : Nat,
     month : Nat,
     year : Nat,
-    amount : Nat,
     rentAmount : Nat,
+    amountPaid : Nat,
     dueDay : Nat,
   ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
@@ -349,12 +355,12 @@ actor {
       tenantId;
       month;
       year;
-      amountPaid = amount;
+      rentAmount;
+      amountPaid;
+      dueDay;
       paidStatus = false;
       paymentDate = "";
       notes = "";
-      rentAmount;
-      dueDay;
     };
 
     switch (rentPayments.get(tenantId)) {
@@ -391,12 +397,12 @@ actor {
                 tenantId = payment.tenantId;
                 month = payment.month;
                 year = payment.year;
+                rentAmount = payment.rentAmount;
                 amountPaid = payment.amountPaid;
+                dueDay = payment.dueDay;
                 paidStatus;
                 paymentDate;
                 notes;
-                rentAmount = payment.rentAmount;
-                dueDay = payment.dueDay;
               };
             } else {
               payment;
@@ -596,8 +602,8 @@ actor {
     photoUrls : [Text],
     createdAt : Text,
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can create property listings");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can create property listings");
     };
 
     let id = nextPropertyListingId;

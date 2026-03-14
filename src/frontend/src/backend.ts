@@ -111,6 +111,7 @@ export interface Tenant {
     leavingDate: string;
     name: string;
     email: string;
+    permanentAddress: string;
     notes: string;
     unitNumber: string;
     phone: string;
@@ -190,12 +191,12 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addBill(tenantId: bigint, billType: string, billingPeriod: string, amountDue: bigint, dueDate: string, notes: string): Promise<bigint>;
     addReminder(tenantId: bigint, billType: string, message: string, createdDate: string, status: string): Promise<void>;
-    addRentPayment(tenantId: bigint, month: bigint, year: bigint, amount: bigint, rentAmount: bigint, dueDay: bigint): Promise<void>;
+    addRentPayment(tenantId: bigint, month: bigint, year: bigint, rentAmount: bigint, amountPaid: bigint, dueDay: bigint): Promise<void>;
     addRentalAgreement(tenantId: bigint, startDate: string, endDate: string): Promise<void>;
     addSecurityDeposit(tenantId: bigint, amount: bigint, paidStatus: boolean, dateReceived: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createPropertyListing(title: string, address: string, description: string, bedrooms: bigint, bathrooms: bigint, rentPrice: bigint, amenities: Array<string>, photoUrls: Array<string>, createdAt: string): Promise<bigint>;
-    createTenant(name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, notes: string): Promise<bigint>;
+    createTenant(name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, permanentAddress: string, notes: string): Promise<bigint>;
     deletePropertyListing(id: bigint): Promise<void>;
     deleteTenant(id: bigint): Promise<void>;
     getAllBills(): Promise<Array<Bill>>;
@@ -219,7 +220,7 @@ export interface backendInterface {
     updateBillStatus(id: bigint, paidStatus: boolean, paymentDate: string, notes: string): Promise<void>;
     updatePropertyListing(id: bigint, title: string, address: string, description: string, bedrooms: bigint, bathrooms: bigint, rentPrice: bigint, amenities: Array<string>, isAvailable: boolean, photoUrls: Array<string>): Promise<void>;
     updateRentPaymentStatus(tenantId: bigint, month: bigint, year: bigint, paidStatus: boolean, paymentDate: string, notes: string): Promise<void>;
-    updateTenant(id: bigint, name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, notes: string): Promise<void>;
+    updateTenant(id: bigint, name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, permanentAddress: string, notes: string): Promise<void>;
 }
 import type { Bill as _Bill, RentalAgreement as _RentalAgreement, SecurityDeposit as _SecurityDeposit, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -420,17 +421,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async createTenant(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string, arg8: string): Promise<bigint> {
+    async createTenant(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string, arg8: string, arg9: string): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.createTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                const result = await this.actor.createTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            const result = await this.actor.createTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
             return result;
         }
     }
@@ -756,17 +757,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateTenant(arg0: bigint, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string, arg8: string, arg9: string): Promise<void> {
+    async updateTenant(arg0: bigint, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string, arg8: string, arg9: string, arg10: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+                const result = await this.actor.updateTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+            const result = await this.actor.updateTenant(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
             return result;
         }
     }

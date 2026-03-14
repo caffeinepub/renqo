@@ -1,21 +1,29 @@
-# Renqo
+# Renqo - Enhanced Tenant Add Form
 
 ## Current State
-Property management app (previously RentEase) with owner/tenant login, dashboard, tenants, payments, bills, reminders.
+The AddTenant form has: name, phone, email, unit number, move-in/leaving dates, broker name/contact, notes, rent amount, rent due day, security deposit, and rental agreement dates.
+
+The Tenant backend model has: id, name, phone, email, unitNumber, moveInDate, leavingDate, brokerContact, brokerName, notes.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Attractive landing page before login: Renqo brand, tagline, feature highlights, CTA.
+- `permanentAddress` field to Tenant backend model and all CRUD operations
+- Document upload section in AddTenant form: upload agreement document + other tenant documents (using blob-storage)
+- Electricity bill amount field in AddTenant form (creates an electricity bill record for the tenant on save)
+- Display permanent address in TenantDetail page
 
 ### Modify
-- App.tsx: add landing state, rename RentEase to Renqo.
-- Login.tsx: rename RentEase to Renqo.
+- `createTenant` and `updateTenant` backend APIs to accept `permanentAddress` parameter
+- AddTenant form: add Permanent Address textarea, document upload section, and electricity bill amount field
+- TenantDetail: show permanent address and uploaded documents
 
 ### Remove
-- Nothing.
+- Nothing removed
 
 ## Implementation Plan
-1. Create Landing.tsx with hero section, tagline, 3 feature cards, Get Started CTA.
-2. Update App.tsx: landing state shown first, transitions to login on CTA click.
-3. Replace all RentEase text with Renqo.
+1. Regenerate Motoko backend to add `permanentAddress` to Tenant model and CRUD APIs
+2. Select blob-storage component for document uploads
+3. Update AddTenant.tsx: add permanent address field, document upload section (agreement + other docs), electricity bill amount field
+4. Update TenantDetail.tsx to show permanent address and tenant documents
+5. Update updateTenant calls to pass permanentAddress

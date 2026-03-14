@@ -75,6 +75,7 @@ export interface Tenant {
   'leavingDate' : string,
   'name' : string,
   'email' : string,
+  'permanentAddress' : string,
   'notes' : string,
   'unitNumber' : string,
   'phone' : string,
@@ -147,7 +148,18 @@ export interface _SERVICE {
     bigint
   >,
   'createTenant' : ActorMethod<
-    [string, string, string, string, string, string, string, string, string],
+    [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+    ],
     bigint
   >,
   'deletePropertyListing' : ActorMethod<[bigint], undefined>,
@@ -196,6 +208,7 @@ export interface _SERVICE {
   'updateTenant' : ActorMethod<
     [
       bigint,
+      string,
       string,
       string,
       string,

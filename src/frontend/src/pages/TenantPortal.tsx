@@ -23,7 +23,6 @@ import {
   TabsTrigger,
 } from "../components/ui/tabs";
 import { useActor } from "../hooks/useActor";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   currentMonth,
   currentYear,
@@ -37,6 +36,11 @@ import {
 interface Props {
   tenantRecord: Tenant;
   onLogout: () => void;
+}
+
+function getDisplayName(raw: string): string {
+  const idx = raw.indexOf("|");
+  return idx === -1 ? raw : raw.slice(0, idx).trim();
 }
 
 export default function TenantPortal({ tenantRecord, onLogout }: Props) {
@@ -81,6 +85,8 @@ export default function TenantPortal({ tenantRecord, onLogout }: Props) {
       currentRent.paidStatus,
     );
 
+  const displayName = getDisplayName(tenantRecord.name);
+
   return (
     <div className="min-h-screen bg-gray-50" data-ocid="tenant_portal.page">
       {/* Header */}
@@ -88,7 +94,7 @@ export default function TenantPortal({ tenantRecord, onLogout }: Props) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            <span className="font-bold text-lg">RentEase</span>
+            <span className="font-bold text-lg">Renqo</span>
           </div>
           <Button
             variant="ghost"
@@ -102,7 +108,7 @@ export default function TenantPortal({ tenantRecord, onLogout }: Props) {
         </div>
         <div>
           <p className="text-indigo-200 text-sm">Welcome back,</p>
-          <h2 className="text-2xl font-bold">{tenantRecord.name}</h2>
+          <h2 className="text-2xl font-bold">{displayName}</h2>
           <div className="flex items-center gap-2 mt-1">
             <Home className="h-4 w-4 text-indigo-200" />
             <span className="text-indigo-100">
@@ -238,7 +244,7 @@ export default function TenantPortal({ tenantRecord, onLogout }: Props) {
                 )
                 .map((p, i) => (
                   <Card
-                    key={i}
+                    key={`${p.year}-${p.month}`}
                     className="border-0 shadow-sm"
                     data-ocid={`tenant_portal.rent.item.${i + 1}`}
                   >
@@ -308,7 +314,7 @@ export default function TenantPortal({ tenantRecord, onLogout }: Props) {
             ) : (
               bills.map((b, i) => (
                 <Card
-                  key={i}
+                  key={String(b.id)}
                   className="border-0 shadow-sm"
                   data-ocid={`tenant_portal.bills.item.${i + 1}`}
                 >

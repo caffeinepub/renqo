@@ -56,9 +56,10 @@ export default function Properties({ onNavigate, isAdmin }: Props) {
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-64 w-full rounded-2xl" />
-          ))}
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       ) : listings.length === 0 ? (
         <div

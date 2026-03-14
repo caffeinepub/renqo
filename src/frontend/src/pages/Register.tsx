@@ -1,4 +1,4 @@
-import { Building2, Shield, User } from "lucide-react";
+import { Building2, CheckCircle2, Shield, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import {
@@ -18,7 +18,7 @@ interface Props {
 
 export default function Register({ onComplete }: Props) {
   const { actor } = useActor();
-  const [step, setStep] = useState<"role" | "details">("role");
+  const [step, setStep] = useState<"role" | "details" | "success">("role");
   const [role, setRole] = useState<"owner" | "tenant">("owner");
   const [name, setName] = useState("");
   const [unitNumber, setUnitNumber] = useState("");
@@ -30,8 +30,17 @@ export default function Register({ onComplete }: Props) {
     setLoading(true);
     setError("");
     try {
-      await actor.saveCallerUserProfile({ name: name.trim() });
-      onComplete(role);
+      const profileName =
+        role === "tenant" && unitNumber.trim()
+          ? `${name.trim()}|${unitNumber.trim()}`
+          : name.trim();
+      await actor.saveCallerUserProfile({ name: profileName });
+      if (role === "tenant") {
+        setStep("success");
+        setTimeout(() => onComplete("tenant"), 2000);
+      } else {
+        onComplete("owner");
+      }
     } catch {
       setError("Registration failed. Please try again.");
     } finally {
@@ -48,7 +57,7 @@ export default function Register({ onComplete }: Props) {
               <Building2 className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">RentEase</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Renqo</h1>
           <p className="text-gray-500 mt-1">Complete your registration</p>
         </div>
 
@@ -154,6 +163,7 @@ export default function Register({ onComplete }: Props) {
                     variant="outline"
                     onClick={() => setStep("role")}
                     className="flex-1"
+                    data-ocid="register.cancel_button"
                   >
                     Back
                   </Button>
@@ -167,6 +177,26 @@ export default function Register({ onComplete }: Props) {
                   </Button>
                 </div>
               </>
+            )}
+
+            {step === "success" && (
+              <div
+                className="text-center py-6 space-y-4"
+                data-ocid="register.success_state"
+              >
+                <div className="flex justify-center">
+                  <CheckCircle2 className="h-14 w-14 text-green-500" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-semibold text-gray-800 text-lg">
+                    Registration complete!
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Your owner will link your unit and you'll get access.
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400">Redirecting…</p>
+              </div>
             )}
           </CardContent>
         </Card>

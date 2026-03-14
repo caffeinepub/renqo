@@ -109,7 +109,10 @@ export default function Reminders({ isAdmin }: Props) {
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton list
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton // biome-ignore lint/suspicious/noArrayIndexKey: stable list
+              key={i}
+              className="h-16 w-full"
+            />
           ))}
         </div>
       ) : allReminders.length === 0 ? (
@@ -123,9 +126,8 @@ export default function Reminders({ isAdmin }: Props) {
       ) : (
         <div className="space-y-2" data-ocid="reminders.list">
           {allReminders.map(({ tenant: t, reminder: r }, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: list without stable id
             <Card
-              key={i}
+              key={`${t.id}-${r.message}`}
               className="border-0 shadow-sm"
               data-ocid={`reminders.item.${i + 1}`}
             >

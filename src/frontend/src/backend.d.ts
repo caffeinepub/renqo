@@ -29,6 +29,7 @@ export interface Tenant {
     leavingDate: string;
     name: string;
     email: string;
+    permanentAddress: string;
     notes: string;
     unitNumber: string;
     phone: string;
@@ -90,12 +91,12 @@ export enum UserRole {
 export interface backendInterface {
     addBill(tenantId: bigint, billType: string, billingPeriod: string, amountDue: bigint, dueDate: string, notes: string): Promise<bigint>;
     addReminder(tenantId: bigint, billType: string, message: string, createdDate: string, status: string): Promise<void>;
-    addRentPayment(tenantId: bigint, month: bigint, year: bigint, amount: bigint, rentAmount: bigint, dueDay: bigint): Promise<void>;
+    addRentPayment(tenantId: bigint, month: bigint, year: bigint, rentAmount: bigint, amountPaid: bigint, dueDay: bigint): Promise<void>;
     addRentalAgreement(tenantId: bigint, startDate: string, endDate: string): Promise<void>;
     addSecurityDeposit(tenantId: bigint, amount: bigint, paidStatus: boolean, dateReceived: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createPropertyListing(title: string, address: string, description: string, bedrooms: bigint, bathrooms: bigint, rentPrice: bigint, amenities: Array<string>, photoUrls: Array<string>, createdAt: string): Promise<bigint>;
-    createTenant(name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, notes: string): Promise<bigint>;
+    createTenant(name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, permanentAddress: string, notes: string): Promise<bigint>;
     deletePropertyListing(id: bigint): Promise<void>;
     deleteTenant(id: bigint): Promise<void>;
     getAllBills(): Promise<Array<Bill>>;
@@ -119,5 +120,5 @@ export interface backendInterface {
     updateBillStatus(id: bigint, paidStatus: boolean, paymentDate: string, notes: string): Promise<void>;
     updatePropertyListing(id: bigint, title: string, address: string, description: string, bedrooms: bigint, bathrooms: bigint, rentPrice: bigint, amenities: Array<string>, isAvailable: boolean, photoUrls: Array<string>): Promise<void>;
     updateRentPaymentStatus(tenantId: bigint, month: bigint, year: bigint, paidStatus: boolean, paymentDate: string, notes: string): Promise<void>;
-    updateTenant(id: bigint, name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, notes: string): Promise<void>;
+    updateTenant(id: bigint, name: string, phone: string, email: string, unitNumber: string, moveInDate: string, leavingDate: string, brokerName: string, brokerContact: string, permanentAddress: string, notes: string): Promise<void>;
 }

@@ -444,7 +444,8 @@ export default function PropertyDetail({ propertyId, onBack, isAdmin }: Props) {
               Photos ({existingPhotos.length + newPhotos.length}/10)
             </Label>
 
-            <div
+            <button
+              type="button"
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -481,7 +482,7 @@ export default function PropertyDetail({ propertyId, onBack, isAdmin }: Props) {
                 className="hidden"
                 onChange={(e) => addNewPhotos(e.target.files)}
               />
-            </div>
+            </button>
 
             <div className="mt-3 grid grid-cols-4 gap-2">
               {existingPhotos.map((url, i) => (
@@ -596,9 +597,12 @@ export default function PropertyDetail({ propertyId, onBack, isAdmin }: Props) {
                 placeholder="Add amenity..."
                 value={amenityInput}
                 onChange={(e) => setAmenityInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && (e.preventDefault(), addAmenity())
-                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addAmenity();
+                  }
+                }}
               />
               <Button
                 type="button"

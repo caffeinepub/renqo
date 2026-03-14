@@ -129,7 +129,8 @@ export default function AddProperty({ onBack, onSaved }: Props) {
             Photos ({photos.length}/10)
           </Label>
           {/* Drop zone */}
-          <div
+          <button
+            type="button"
             data-ocid="add_property.photos_upload"
             onDragOver={(e) => {
               e.preventDefault();
@@ -173,7 +174,7 @@ export default function AddProperty({ onBack, onSaved }: Props) {
               className="hidden"
               onChange={(e) => addPhotos(e.target.files)}
             />
-          </div>
+          </button>
 
           {/* Previews */}
           {photos.length > 0 && (
@@ -313,9 +314,12 @@ export default function AddProperty({ onBack, onSaved }: Props) {
               placeholder="e.g. Parking, Gym, Pool"
               value={amenityInput}
               onChange={(e) => setAmenityInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addAmenity())
-              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addAmenity();
+                }
+              }}
             />
             <Button
               type="button"
